@@ -1,8 +1,9 @@
 {
   "name": "The Metropolitan Church",
   "short_name": "TMC",
-  "start_url": "/index.html",
-  "scope": "/",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "fullscreen"],
   "background_color": "#ffffff",
