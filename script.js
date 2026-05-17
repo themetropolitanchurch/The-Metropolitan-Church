@@ -108,6 +108,313 @@ if (volumeControl) {
 }
 
 // ============================================
+// Premium Archive.org Audio Player
+// ============================================
+const audioPlayer = document.querySelector('[data-audio-player]');
+
+if (audioPlayer) {
+    const audio = audioPlayer.querySelector('[data-audio-element]');
+    const toggleButton = audioPlayer.querySelector('[data-audio-toggle]');
+    const retryButton = audioPlayer.querySelector('[data-audio-retry]');
+    const seekBar = audioPlayer.querySelector('[data-audio-seek]');
+    const currentTimeEl = audioPlayer.querySelector('[data-current-time]');
+    const durationEl = audioPlayer.querySelector('[data-duration]');
+    const statusTextEl = audioPlayer.querySelector('[data-status-text]');
+    const errorBox = audioPlayer.querySelector('[data-audio-error]');
+    const playIcon = audioPlayer.querySelector('[data-play-icon]');
+    const trackTitleEl = audioPlayer.querySelector('[data-track-title]');
+    const trackDescriptionEl = audioPlayer.querySelector('[data-track-description]');
+
+    const audioSource = audio ? audio.currentSrc || audio.getAttribute('src') || '' : '';
+    const loadTimeoutMs = 15000;
+    let loadTimeoutId = null;
+    let userHasPlayed = false;
+
+    const setPlayerState = (state) => {
+        audioPlayer.classList.remove('is-loading', 'is-ready', 'is-playing', 'is-paused', 'is-error');
+        audioPlayer.classList.add(`is-${state}`);
+    };
+
+    const formatTime = (seconds) => {
+        if (!Number.isFinite(seconds) || seconds < 0) {
+            return '0:00';
+        }
+
+        const totalSeconds = Math.floor(seconds);
+        const minutes = Math.floor(totalSeconds / 60);
+        const remainingSeconds = totalSeconds % 60;
+        return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+    };
+
+    const clearLoadTimeout = () => {
+        if (loadTimeoutId) {
+            window.clearTimeout(loadTimeoutId);
+            loadTimeoutId = null;
+        }
+    };
+
+    const setLoading = (message) => {
+        setPlayerState('loading');
+        if (statusTextEl) {
+            statusTextEl.textContent = message || 'Loading audio from Archive.org...';
+        }
+        if (toggleButton) {
+            toggleButton.disabled = false;
+            toggleButton.setAttribute('aria-pressed', 'false');
+        }
+    };
+
+    const setReady = (message) => {
+        clearLoadTimeout();
+        setPlayerState('ready');
+        if (statusTextEl) {
+            statusTextEl.textContent = message || 'Audio ready.';
+        }
+        if (errorBox) {
+            errorBox.hidden = true;
+            errorBox.textContent = '';
+        }
+        if (toggleButton) {
+            toggleButton.disabled = false;
+        }
+        if (seekBar) {
+            seekBar.disabled = false;
+        }
+    };
+
+    const setError = (error) => {
+        clearLoadTimeout();
+        const message = error instanceof Error ? error.message : 'Audio playback failed.';
+        console.error('Archive.org audio player error:', error);
+        setPlayerState('error');
+        if (statusTextEl) {
+            statusTextEl.textContent = 'Playback unavailable.';
+        }
+        if (errorBox) {
+            errorBox.textContent = `We could not load the Sunday service recording. ${message}`;
+            errorBox.hidden = false;
+        }
+        if (toggleButton) {
+            toggleButton.disabled = true;
+        }
+        if (seekBar) {
+            seekBar.disabled = true;
+        }
+        if (playIcon) {
+            playIcon.textContent = '!';
+        }
+    };
+
+    const syncSeekBar = () => {
+        if (!audio || !seekBar || !durationEl || !currentTimeEl) {
+            return;
+        }
+
+        const duration = audio.duration;
+        if (Number.isFinite(duration) && duration > 0) {
+            const progress = Math.min(1000, Math.max(0, (audio.currentTime / duration) * 1000));
+            seekBar.value = String(progress);
+            durationEl.textContent = formatTime(duration);
+        }
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+    };
+
+    const resetSource = () => {
+        if (!audio || !audioSource) {
+            return;
+        }
+
+        audio.pause();
+        audio.src = audioSource;
+        audio.load();
+        if (playIcon) {
+            playIcon.textContent = '▶';
+        }
+        setLoading('Loading audio from Archive.org...');
+    };
+
+    const loadTrack = async (source, title, description) => {
+        if (!source) {
+            setError(new Error('No direct audio link has been set for this recording.'));
+            return;
+        }
+
+        try {
+            clearLoadTimeout();
+            userHasPlayed = true;
+            if (trackTitleEl && title) {
+                trackTitleEl.textContent = title;
+            }
+            if (trackDescriptionEl && description) {
+                trackDescriptionEl.textContent = description;
+            }
+            if (toggleButton) {
+                toggleButton.disabled = false;
+            }
+            if (seekBar) {
+                seekBar.disabled = false;
+            }
+            audio.pause();
+            audio.src = source;
+            audio.load();
+            setLoading(`Loading ${title || 'audio'}...`);
+            await audio.play();
+        } catch (error) {
+            setError(error);
+        }
+    };
+
+    window.tmcPlayAudioTrack = loadTrack;
+
+    if (audio && toggleButton) {
+        setLoading('Loading audio from Archive.org...');
+
+        audio.addEventListener('loadstart', () => {
+            setLoading('Buffering the recording...');
+            clearLoadTimeout();
+            loadTimeoutId = window.setTimeout(() => {
+                if (audio.readyState < 2) {
+                    setError(new Error('The recording timed out while loading.'));
+                }
+            }, loadTimeoutMs);
+        });
+
+        audio.addEventListener('loadedmetadata', () => {
+            if (durationEl) {
+                durationEl.textContent = formatTime(audio.duration);
+            }
+        });
+
+        audio.addEventListener('canplay', () => {
+            setReady('Ready to play.');
+            if (audio.paused && !userHasPlayed && playIcon) {
+                playIcon.textContent = '▶';
+            }
+        });
+
+        audio.addEventListener('play', () => {
+            userHasPlayed = true;
+            clearLoadTimeout();
+            setPlayerState('playing');
+            if (statusTextEl) {
+                statusTextEl.textContent = 'Now playing.';
+            }
+            if (toggleButton) {
+                toggleButton.setAttribute('aria-pressed', 'true');
+            }
+            if (playIcon) {
+                playIcon.textContent = '❚❚';
+            }
+        });
+
+        audio.addEventListener('pause', () => {
+            if (audioPlayer.classList.contains('is-error')) {
+                return;
+            }
+            setPlayerState('paused');
+            if (statusTextEl) {
+                statusTextEl.textContent = 'Paused.';
+            }
+            if (toggleButton) {
+                toggleButton.setAttribute('aria-pressed', 'false');
+            }
+            if (playIcon) {
+                playIcon.textContent = '▶';
+            }
+        });
+
+        audio.addEventListener('waiting', () => {
+            setLoading('Buffering the recording...');
+        });
+
+        audio.addEventListener('playing', () => {
+            setReady('Now playing.');
+            setPlayerState('playing');
+            if (playIcon) {
+                playIcon.textContent = '❚❚';
+            }
+        });
+
+        audio.addEventListener('timeupdate', syncSeekBar);
+        audio.addEventListener('durationchange', syncSeekBar);
+
+        audio.addEventListener('ended', () => {
+            setPlayerState('ready');
+            if (statusTextEl) {
+                statusTextEl.textContent = 'Recording finished.';
+            }
+            if (toggleButton) {
+                toggleButton.setAttribute('aria-pressed', 'false');
+            }
+            if (playIcon) {
+                playIcon.textContent = '▶';
+            }
+            if (seekBar) {
+                seekBar.value = '1000';
+            }
+        });
+
+        audio.addEventListener('error', () => {
+            const mediaError = audio.error;
+            const errorMessage = mediaError && mediaError.message ? mediaError.message : 'The Archive.org recording could not be loaded.';
+            setError(new Error(errorMessage));
+        });
+
+        toggleButton.addEventListener('click', async () => {
+            try {
+                if (audio.paused) {
+                    setLoading('Starting playback...');
+                    await audio.play();
+                } else {
+                    audio.pause();
+                }
+            } catch (error) {
+                setError(error);
+            }
+        });
+
+        if (retryButton) {
+            retryButton.addEventListener('click', () => {
+                userHasPlayed = false;
+                resetSource();
+                if (errorBox) {
+                    errorBox.hidden = true;
+                    errorBox.textContent = '';
+                }
+                if (seekBar) {
+                    seekBar.value = '0';
+                }
+                if (currentTimeEl) {
+                    currentTimeEl.textContent = '0:00';
+                }
+                if (playIcon) {
+                    playIcon.textContent = '▶';
+                }
+            });
+        }
+
+        if (seekBar) {
+            seekBar.addEventListener('input', () => {
+                if (!audio.duration || !Number.isFinite(audio.duration)) {
+                    return;
+                }
+                const seekTime = (Number(seekBar.value) / 1000) * audio.duration;
+                currentTimeEl.textContent = formatTime(seekTime);
+            });
+
+            seekBar.addEventListener('change', () => {
+                if (!audio.duration || !Number.isFinite(audio.duration)) {
+                    return;
+                }
+                audio.currentTime = (Number(seekBar.value) / 1000) * audio.duration;
+            });
+        }
+
+        audio.load();
+    }
+}
+
+// ============================================
 // Smooth Scrolling for Navigation Links
 // ============================================
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -297,6 +604,16 @@ function toggleSeries(seriesId) {
 document.addEventListener('click', (e) => {
     const btn = e.target.closest && e.target.closest('.listen-btn');
     if (!btn) return;
+    const audioSrc = btn.getAttribute('data-audio-src');
+    if (audioSrc) {
+        const title = btn.getAttribute('data-audio-title') || 'Radio Recording';
+        const description = btn.getAttribute('data-audio-description') || '';
+        if (typeof window.tmcPlayAudioTrack === 'function') {
+            window.tmcPlayAudioTrack(audioSrc, title, description);
+        }
+        btn.blur();
+        return;
+    }
     const url = btn.getAttribute('data-url');
     if (!url) return;
     // open in new tab safely
