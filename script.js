@@ -81,6 +81,123 @@ dropdownItems.forEach(item => {
 });
 
 // ============================================
+// Photo Preview Modal
+// ============================================
+const photoModal = document.getElementById('photoModal');
+
+if (photoModal) {
+    const photoModalImage = document.getElementById('photoModalImage');
+    const photoModalTitle = document.getElementById('photoModalTitle');
+    const photoModalCaption = document.getElementById('photoModalCaption');
+    const photoModalDownload = document.getElementById('photoModalDownload');
+    const photoCloseTargets = photoModal.querySelectorAll('[data-photo-close]');
+    const photoCards = document.querySelectorAll('body > section .media-card a[href]');
+    let lastFocusedElement = null;
+
+    const openPhotoModal = (imageUrl, imageAlt, titleText, captionText) => {
+        if (!photoModal || !photoModalImage || !photoModalDownload) {
+            return;
+        }
+
+        lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        photoModalImage.src = imageUrl;
+        photoModalImage.alt = imageAlt || titleText || 'Photo preview';
+        photoModalDownload.href = imageUrl;
+        photoModalDownload.setAttribute('download', '');
+        photoModalTitle.textContent = titleText || 'Photo Preview';
+        photoModalCaption.textContent = captionText || '';
+        photoModal.hidden = false;
+        photoModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('photo-modal-open');
+        photoModal.querySelector('.photo-modal-close')?.focus();
+    };
+
+    const closePhotoModal = () => {
+        if (!photoModal) {
+            return;
+        }
+
+        photoModal.hidden = true;
+        photoModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('photo-modal-open');
+        if (photoModalImage) {
+            photoModalImage.src = '';
+        }
+        if (lastFocusedElement) {
+            lastFocusedElement.focus();
+            lastFocusedElement = null;
+        }
+    };
+
+    photoCards.forEach((link) => {
+        const card = link.closest('.media-card');
+        const heading = card ? card.querySelector('h3') : null;
+        const paragraph = card ? card.querySelector('p') : null;
+
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            openPhotoModal(
+                link.href,
+                link.querySelector('img')?.alt || heading?.textContent || 'Photo preview',
+                heading?.textContent || 'Photo Preview',
+                paragraph?.textContent || ''
+            );
+        });
+    });
+
+    photoCloseTargets.forEach((target) => {
+        target.addEventListener('click', closePhotoModal);
+    });
+
+    // Download button: fetch the image as a blob and save locally without navigating away.
+    photoModalDownload.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        const imageUrl = photoModalDownload.href;
+        if (!imageUrl) return;
+        const originalText = photoModalDownload.textContent;
+        try {
+            photoModalDownload.textContent = 'Downloading...';
+            // Fetch image as blob
+            const resp = await fetch(imageUrl, { mode: 'cors' });
+            if (!resp.ok) throw new Error('Network response was not ok');
+            const blob = await resp.blob();
+            // Derive a filename from the URL
+            let filename = 'photo.jpg';
+            try {
+                const urlObj = new URL(imageUrl);
+                const parts = urlObj.pathname.split('/');
+                filename = parts.pop() || filename;
+            } catch (e) {
+                // ignore
+            }
+
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            // Revoke after a minute
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+            photoModalDownload.textContent = originalText;
+        } catch (err) {
+            console.error('Download failed:', err);
+            photoModalDownload.textContent = originalText;
+            // Fallback: open original URL in new tab for user to download
+            window.open(imageUrl, '_blank');
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !photoModal.hidden) {
+            closePhotoModal();
+        }
+    });
+}
+
+// ============================================
 // Radio Player Controls
 // ============================================
 const playBtn = document.getElementById('playBtn');
@@ -420,12 +537,17 @@ if (audioPlayer) {
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
-        if (href !== '#' && document.querySelector(href)) {
-            e.preventDefault();
-            document.querySelector(href).scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
+        // Only handle same-page fragment links that are valid selectors and not the noop '#'
+        if (!href || href === '#' || !href.startsWith('#')) return;
+        try {
+            const target = document.querySelector(href);
+            if (target) {
+                e.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } catch (err) {
+            // Invalid selector (e.g. href was changed to a full URL) — ignore.
+            // Do not block the click in this case.
         }
     });
 });

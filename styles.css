@@ -567,6 +567,111 @@ body {
 }
 
 /* ============================================
+   Photo Preview Modal
+   ============================================ */
+.photo-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.photo-modal[hidden] {
+    display: none;
+}
+
+.photo-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(13, 16, 10, 0.72);
+    backdrop-filter: blur(6px);
+}
+
+.photo-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(960px, 100%);
+    background: var(--site-bg);
+    border: 1px solid rgba(16, 20, 12, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.32);
+    overflow: hidden;
+}
+
+.photo-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-primary);
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.photo-modal-image {
+    display: block;
+    width: 100%;
+    max-height: min(72vh, 720px);
+    object-fit: contain;
+    background: #0f140e;
+}
+
+.photo-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px;
+}
+
+.photo-modal-footer h3 {
+    margin-bottom: 6px;
+    font-size: 20px;
+    color: var(--text-primary);
+}
+
+.photo-modal-footer p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.photo-modal-download {
+    flex: 0 0 auto;
+    padding: 10px 16px;
+    font-size: 13px;
+}
+
+body.photo-modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 640px) {
+    .photo-modal {
+        padding: 12px;
+    }
+
+    .photo-modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .photo-modal-download {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ============================================
    Radio Player
    ============================================ */
 .radio-player {
