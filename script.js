@@ -750,6 +750,56 @@ document.addEventListener('click', (e) => {
     try { btn.blur(); } catch (err) {}
 });
 
+// ============================================
+// Contacts Table Search
+// ============================================
+const contactsSearchInput = document.getElementById('contactsSearchInput');
+const contactsSearchBtn = document.getElementById('contactsSearchBtn');
+const contactsClearBtn = document.getElementById('contactsClearBtn');
+
+function performContactsSearch() {
+    const query = contactsSearchInput ? contactsSearchInput.value.toLowerCase().trim() : '';
+    const table = document.querySelector('.contact-table');
+    if (!table) return;
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+
+    let anyVisible = false;
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const matches = query === '' || text.includes(query);
+        row.style.display = matches ? '' : 'none';
+        if (matches) anyVisible = true;
+    });
+
+    // Optional: show a small no-results message below the search
+    let noResults = document.getElementById('contacts-no-results');
+    if (!noResults) {
+        noResults = document.createElement('div');
+        noResults.id = 'contacts-no-results';
+        noResults.style.marginTop = '8px';
+        noResults.style.color = '#666';
+        const contactList = document.querySelector('.contact-list');
+        if (contactList) contactList.appendChild(noResults);
+    }
+    noResults.textContent = anyVisible ? '' : (query === '' ? '' : `No contacts match "${query}"`);
+}
+
+if (contactsSearchBtn && contactsSearchInput) {
+    contactsSearchBtn.addEventListener('click', performContactsSearch);
+    contactsSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') performContactsSearch();
+    });
+    contactsSearchInput.addEventListener('input', performContactsSearch);
+}
+
+if (contactsClearBtn && contactsSearchInput) {
+    contactsClearBtn.addEventListener('click', () => {
+        contactsSearchInput.value = '';
+        performContactsSearch();
+        contactsSearchInput.focus();
+    });
+}
+
 // Mobile messages reveal: show 5 first, then reveal 10 more per tap
 document.addEventListener('DOMContentLoaded', () => {
     const mediaGrid = document.getElementById('mediaGrid');
