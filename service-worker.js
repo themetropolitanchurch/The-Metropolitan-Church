@@ -4,7 +4,7 @@ const ASSETS_TO_CACHE = [
   '/index.html',
   '/styles.css',
   '/script.js',
-  '/logo.png',
+  '/LOGO TMC.png',
   '/icon-180.png',
   '/icon-192.png',
   '/icon-512.png',

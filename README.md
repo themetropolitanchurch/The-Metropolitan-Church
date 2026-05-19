@@ -17,7 +17,7 @@ TMC Church/
 ├── contact.html
 ├── styles.css
 ├── script.js
-├── logo.png
+├── LOGO TMC.png
 └── README.md
 ```
 

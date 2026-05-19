@@ -12,6 +12,18 @@
   "description": "Messages, media and resources from The Metropolitan Church, Ibadan.",
   "icons": [
     {
+      "src": "LOGO TMC.png",
+      "sizes": "369x370",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",

@@ -117,8 +117,8 @@ body {
 }
 
 .church-logo-image {
-    width: 46px;
-    height: 46px;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
     flex: 0 0 auto;
 }
@@ -256,6 +256,8 @@ body {
     justify-content: center;
     position: relative;
 }
+
+/* splash overlay removed; PWA splash handled via manifest/icons */
 
 .hero::after {
     content: '';
@@ -2071,8 +2073,8 @@ body.photo-modal-open {
     }
 
     .church-logo-image {
-        width: 38px;
-        height: 38px;
+        width: 48px;
+        height: 48px;
     }
 
     .church-name {
