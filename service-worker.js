@@ -5,6 +5,8 @@ const ASSETS_TO_CACHE = [
   '/styles.css',
   '/script.js',
   '/LOGO TMC.png',
+  '/icon-96.png',
+  '/icon-144.png',
   '/icon-180.png',
   '/icon-192.png',
   '/icon-512.png',
