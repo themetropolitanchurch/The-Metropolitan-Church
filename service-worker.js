@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tmc-cache-v3';
+const CACHE_NAME = 'tmc-cache-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const ASSETS_TO_CACHE = [
   '/icon-144.png',
   '/icon-180.png',
   '/icon-192.png',
+  '/icon-512.png',
   '/manifest.json'
 ];
 
