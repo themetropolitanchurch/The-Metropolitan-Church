@@ -53,14 +53,14 @@ window.addEventListener('load', () => {
     const splash = document.getElementById('pwa-splash');
     if (!splash) return;
     
-    // Keep splash visible for 1200ms for better UX
+    // Keep splash visible for 6 seconds
     setTimeout(() => {
         splash.classList.add('hidden');
         // Remove from DOM after animation completes
         setTimeout(() => {
             if (splash.parentNode) splash.parentNode.removeChild(splash);
         }, 400);
-    }, 1200);
+    }, 6000); // Changed duration to 6 seconds
 });
 
 if (navToggle && navMenu) {
