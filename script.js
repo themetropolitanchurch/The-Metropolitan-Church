@@ -46,6 +46,23 @@ function injectThemeToggle() {
 applyTheme(getPreferredTheme());
 document.addEventListener('DOMContentLoaded', injectThemeToggle);
 
+// ============================================
+// PWA Custom Splash Screen
+// ============================================
+window.addEventListener('load', () => {
+    const splash = document.getElementById('pwa-splash');
+    if (!splash) return;
+    
+    // Keep splash visible for 1200ms for better UX
+    setTimeout(() => {
+        splash.classList.add('hidden');
+        // Remove from DOM after animation completes
+        setTimeout(() => {
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 400);
+    }, 1200);
+});
+
 if (navToggle && navMenu) {
     navToggle.addEventListener('click', () => {
         navMenu.classList.toggle('active');
