@@ -973,6 +973,45 @@ function saveBelieverRecords(records) {
     localStorage.setItem(believerRecordsKey, JSON.stringify(records));
 }
 
+async function clearAppData() {
+    localStorage.clear();
+    sessionStorage.clear();
+
+    if (typeof indexedDB !== 'undefined' && typeof indexedDB.databases === 'function') {
+        try {
+            const databases = await indexedDB.databases();
+            await Promise.all(databases
+                .filter((database) => database && database.name)
+                .map((database) => new Promise((resolve) => {
+                    const request = indexedDB.deleteDatabase(database.name);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => resolve();
+                    request.onblocked = () => resolve();
+                })));
+        } catch (error) {
+            // Ignore IndexedDB cleanup failures.
+        }
+    }
+
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+        } catch (error) {
+            // Ignore cache cleanup failures.
+        }
+    }
+
+    if ('serviceWorker' in navigator) {
+        try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+        } catch (error) {
+            // Ignore service worker cleanup failures.
+        }
+    }
+}
+
 function escapeHtml(value) {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -1102,6 +1141,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = 'believer-login.html';
             });
         }
+    }
+
+    const clearAppDataButton = document.getElementById('clearAppDataBtn');
+    if (clearAppDataButton) {
+        clearAppDataButton.addEventListener('click', async () => {
+            const confirmed = window.confirm('This will reset this app on this device. Continue?');
+            if (!confirmed) return;
+
+            clearAppDataButton.disabled = true;
+            clearAppDataButton.textContent = 'Clearing...';
+
+            try {
+                await clearAppData();
+                window.location.href = 'index.html';
+            } catch (error) {
+                clearAppDataButton.disabled = false;
+                clearAppDataButton.textContent = 'Reset App';
+                window.alert('Could not reset the app. Please try again.');
+            }
+        });
     }
 });
 
